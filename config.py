@@ -75,69 +75,67 @@ class config:
     "The Void": (182, 208, 255),
     }
 
-    beachMap = [
-        (0,   60,  "Cold Beach"),
-        (60,  100, "Stone Beach"),
-        (100, 256, "Beach")
-    ]
-    beachPallete = IntervalTree.from_tuples(beachMap)
-
-    tempZoneCold = [
+    #Humidity
+    coldPallete = IntervalTree.from_tuples([
         (0,   80,  "Ice Plains"),
         (80, 256, "Cold Taiga")
-    ]
-    coldPallete = IntervalTree.from_tuples(tempZoneCold)
+    ])
 
-    tempZoneCool = [
+    coolPallete = IntervalTree.from_tuples([
         (0,   100, "Taiga"),
         (100, 256, "Mega Taiga")
-    ]
-    coolPallete = IntervalTree.from_tuples(tempZoneCool)
+    ])
 
-    tempZoneModerate = [
+    moderatePallete = IntervalTree.from_tuples([
         (0,   60,  "Plains"),
         (60,  100, "Forest"),
         (100, 150, "Roofed Forest"),
         (150, 256, "Swampland")
-    ]
-    moderatePallete = IntervalTree.from_tuples(tempZoneModerate)
+    ])
 
-    tempZoneWarm = [
+    warmPallete = IntervalTree.from_tuples([
         (0,    60, "Desert M"),
         (60,   80, "Mesa"),
         (80,  120, "Savanna"),
         (120, 256, "Jungle")
-    ]
-    warmPallete = IntervalTree.from_tuples(tempZoneWarm)
+    ])
 
-    tempZoneHot = [
+    hotPallete = IntervalTree.from_tuples([
         (60,  100, "Desert"),
         (100, 256, "Savanna")
-    ]
-    hotPallete = IntervalTree.from_tuples(tempZoneHot)
+    ])
 
-    landMap = [
+    # Temperature
+    oceanPallete = IntervalTree.from_tuples([
+        (0,   30,  "FrozenOcean"),
+        (30,  256, "Ocean")
+    ])
+
+    beachPallete = IntervalTree.from_tuples([
+        (0,   60,  "Cold Beach"),
+        (60,  100, "Stone Beach"),
+        (100, 256, "Beach")
+    ])
+
+    landPallete = IntervalTree.from_tuples([
         (0,   60,  coldPallete),
         (60,  80, coolPallete),
         (80,  120, moderatePallete),
         (120,  180, warmPallete),
         (180, 256, hotPallete)
-    ]
-    landPallete = IntervalTree.from_tuples(landMap)
+    ])
 
-    mountainMap = [
+    mountainPallete = IntervalTree.from_tuples([
         (0,  100, "Extreme Hills"),
-        (100, 256, "Extreme Hills+")
-    ]
-    mountainPallete = IntervalTree.from_tuples(mountainMap)
+        (100, 256, "Ice Mountains")
+    ])
 
-    heightMap = [
+    # Elevation
+    palleteLookup = IntervalTree.from_tuples([
         # (0,   50,  "Deep Ocean"), #Deep Ocean
-        (0,  100, "Ocean"), #Ocean
+        (0,  100, oceanPallete),
         (100, 105, beachPallete),
         (105, 150, landPallete),
-        (150, 230, "Extreme Hills Edge"), #Mountain Edge
-        (230, 256, "Extreme Hills")
-    ]
-
-    palleteLookup = IntervalTree.from_tuples(heightMap)
+        (150, 200, "Extreme Hills Edge"), #Mountain Edge
+        (200, 256, mountainPallete)
+    ])
