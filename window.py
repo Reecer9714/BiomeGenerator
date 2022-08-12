@@ -30,17 +30,29 @@ class MainWindow(Thread):
 
         self.image_preview = tk.Canvas(self.frame, bg='white', width=640, height=640)
         self._canvas_image = self.image_preview.create_image(0,0, anchor=tk.NW)
-        self.image_preview.grid(row=0, columnspan=5)
+        self.image_preview.grid(row=0, columnspan=5, rowspan=3)
+
+        self.image_red_preview = tk.Canvas(self.frame, bg='red', width=210, height=210)
+        self._red_noise_image = self.image_red_preview.create_image(0,0, anchor=tk.NW)
+        self.image_red_preview.grid(row=0, column=6)
+
+        self.image_green_preview = tk.Canvas(self.frame, bg='green', width=210, height=210)
+        self._green_noise_image = self.image_green_preview.create_image(0,0, anchor=tk.NW)
+        self.image_green_preview.grid(row=1, column=6)
+
+        self.image_blue_preview = tk.Canvas(self.frame, bg='blue', width=210, height=210)
+        self._blue_noise_image = self.image_blue_preview.create_image(0,0, anchor=tk.NW)
+        self.image_blue_preview.grid(row=2, column=6)
 
         self.button_generate = tk.Button(self.frame, text="Generate", command=self.onGenerate)
-        self.button_generate.grid(row=1, column=0, sticky=tk.W)
+        self.button_generate.grid(row=3, column=0, sticky=tk.W)
 
         self.progress_bar = Progressbar(self.frame, mode='indeterminate')
-        self.progress_bar.grid(row=1, column=1, columnspan=3)
+        self.progress_bar.grid(row=3, column=1, columnspan=5)
         self.progress_bar.grid_remove()
 
         self.button_save = tk.Button(self.frame, text="Save To PNG", command=self.onSave)
-        self.button_save.grid(row=1, column=4, sticky=tk.E)
+        self.button_save.grid(row=3, column=6, sticky=tk.E)
 
         self.root.mainloop()
 
@@ -50,12 +62,18 @@ class MainWindow(Thread):
             if filename:
                 self.current_image_PIL.save(filename)
 
-    def updatePreview(self, new_image):
+    def updatePreview(self, new_image: Image.Image):
         self.progress_bar.stop()
         self.progress_bar.grid_remove()
         self.current_image_PIL = new_image
         self.current_image = ImageTk.PhotoImage(new_image)
+        self.current_red_image = ImageTk.PhotoImage(new_image.getchannel("R").resize((210,210), Image.ANTIALIAS))
+        self.current_green_image = ImageTk.PhotoImage(new_image.getchannel("G").resize((210,210), Image.ANTIALIAS))
+        self.current_blue_image = ImageTk.PhotoImage(new_image.getchannel("B").resize((210,210), Image.ANTIALIAS))
         self.image_preview.itemconfig(self._canvas_image, image=self.current_image)
+        self.image_red_preview.itemconfig(self._red_noise_image, image=self.current_red_image)
+        self.image_green_preview.itemconfig(self._green_noise_image, image=self.current_green_image)
+        self.image_blue_preview.itemconfig(self._blue_noise_image, image=self.current_blue_image)
 
     def onGenerate(self):
         if not self.generate_thread._is_stopped:

@@ -1,5 +1,5 @@
 import random
-from typing import Union
+from typing import Callable, Union
 import numpy as np
 from multiprocessing import Pool, shared_memory
 from PIL import Image
@@ -20,7 +20,7 @@ def noise(nx, ny, seed):
         base=seed, repeatx=config.image_width, repeaty=config.image_height)
     return int(remap(-1,1,0,255,noise_value))
 
-def generate(callback):
+def generate(callback: Callable[[Image.Image], None]):
     image_array = np.ndarray((config.image_height, config.image_width, 3), dtype=np.uint8)
     
     parent_shm = shared_memory.SharedMemory(name="NoiseBuffer")
@@ -72,8 +72,8 @@ def generatePixel(x: int, y: int, pixel: tuple, rng) -> tuple[float, float, floa
     brightness_mod = inv_lerp(elev_interval.begin, elev_interval.end, pixel[ELEV])
     interval_range = clamp((elev_interval.end - elev_interval.begin) / 50, 0, 0.5)
     color_mod = 1 + round((brightness_mod - 0.5) * (0.1 + interval_range), 1)
-    bighter_color = tuple(clamp(pixel * color_mod, 0, 255) for pixel in biome_color)
-    return bighter_color
+    brighter_color = tuple(clamp(pixel * color_mod, 0, 255) for pixel in biome_color)
+    return brighter_color
 
 def main():
     gui = MainWindow(generate)
