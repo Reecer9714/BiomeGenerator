@@ -1,31 +1,20 @@
 import random
+from typing import Union
 import numpy as np
 from multiprocessing import Pool, shared_memory
 from PIL import Image
 from noise import snoise2
-from intervaltree import IntervalTree
+from intervaltree import IntervalTree, Interval
 
 from config import config
 from window import MainWindow
+from util import *
 
-RED = 0
-GREEN = 1
-BLUE = 2
-
-def lerp(a: float, b: float, t: float) -> float:
-    return (1 - t) * a + t * b
-
-def inv_lerp(a: float, b: float, v: float) -> float:
-    return (v - a) / (b - a)
-
-def remap(i_min: float, i_max: float, o_min: float, o_max: float, v: float) -> float:
-    return lerp(o_min, o_max, inv_lerp(i_min, i_max, v))
-
-def clamp(n, small, large):
-    return max(small, min(n, large))
+RED = TEMP = 0
+GREEN = ELEV = 1
+BLUE = HUMID = 2
 
 def noise(nx, ny, seed):
-    # Rescale from -1.0:+1.0 to 0:255
     noise_value = snoise2(nx / config.scale_x, ny / config.scale_y, \
         octaves=config.octaves, persistence=config.persistence, lacunarity=config.lacunarity, \
         base=seed, repeatx=config.image_width, repeaty=config.image_height)
@@ -40,9 +29,7 @@ def generate(callback):
     rng[1] = random.random()
     rng[2] = random.random()
 
-    arglist = []
-    for y in range(config.image_height):
-        arglist.append((y, image_array[y]))
+    arglist = [(y, image_array[y]) for y in range(config.image_height)]
 
     multiple_results = executor.starmap(thread_task, arglist, 1)
 
@@ -50,7 +37,7 @@ def generate(callback):
     callback(new_image)
     return new_image
 
-def thread_task(y, image_row):
+def thread_task(y: int, image_row):
     parent_shm = shared_memory.SharedMemory(name="NoiseBuffer")
     rng = np.ndarray((3,), buffer=parent_shm.buf)
     for x in range(config.image_width):
@@ -59,28 +46,30 @@ def thread_task(y, image_row):
     del rng
     return image_row
 
-def generatePixel(x, y, pixel, rng):
-    pixel[RED] = noise(x, y, rng[RED]) * 255
-    pixel[GREEN] = noise(x, y, rng[GREEN]) * 255
-    pixel[BLUE] = noise(x, y, rng[BLUE]) * 255
+def generatePixel(x: int, y: int, pixel: tuple, rng) -> tuple[float, float, float]:
+    pixel[TEMP] = noise(x, y, rng[TEMP]) * 255
+    pixel[ELEV] = noise(x, y, rng[ELEV]) * 255
+    pixel[HUMID] = noise(x, y, rng[HUMID]) * 255
 
     distx = abs(x/config.image_width - 0.5)
     disty = abs(y/config.image_height - 0.5)
     dist = distx*distx + disty*disty
-    pixel[RED] -= min(disty*200, pixel[RED])
-    pixel[GREEN] -= min(dist*320, pixel[GREEN])
+    #Vertical Mask Temperature
+    pixel[TEMP] -= min(disty*200, pixel[TEMP])
+    #Circle Mask Elevation
+    pixel[ELEV] -= min(dist*320, pixel[ELEV])
     
     # colorize
-    elev_interval = config.palleteLookup.at( pixel[GREEN] ).pop()
-    color = elev_interval.data
+    elev_interval: Interval = config.palleteLookup.at( pixel[ELEV] ).pop()
+    color: Union[tuple , IntervalTree] = elev_interval.data
     if isinstance(color, IntervalTree):
-        color = color.at( pixel[RED] ).pop().data
+        color = color.at( pixel[TEMP] ).pop().data
         if isinstance(color, IntervalTree):
-            color = color.at( pixel[BLUE] ).pop().data
+            color = color.at( pixel[HUMID] ).pop().data
 
     biome_color = config.biomeColorMap.get(color, (255, 0, 255))
     # modify brightness slightly based on elevation
-    brightness_mod = inv_lerp(elev_interval.begin, elev_interval.end, pixel[GREEN])
+    brightness_mod = inv_lerp(elev_interval.begin, elev_interval.end, pixel[ELEV])
     interval_range = clamp((elev_interval.end - elev_interval.begin) / 50, 0, 0.5)
     color_mod = 1 + round((brightness_mod - 0.5) * (0.1 + interval_range), 1)
     bighter_color = tuple(clamp(pixel * color_mod, 0, 255) for pixel in biome_color)
