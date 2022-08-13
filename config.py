@@ -75,6 +75,8 @@ class config:
     "The Void": (182, 208, 255),
     }
 
+    freezing_point = 30
+
     #Humidity
     coldPallete = IntervalTree.from_tuples([
         (0,   80,  "Ice Plains"),
@@ -101,33 +103,34 @@ class config:
     ])
 
     hotPallete = IntervalTree.from_tuples([
+        (0,   60,  "Desert"), # Barren?
         (60,  100, "Desert"),
         (100, 256, "Savanna")
     ])
 
     # Temperature
     oceanPallete = IntervalTree.from_tuples([
-        (0,   30,  "FrozenOcean"),
-        (30,  256, "Ocean")
+        (0,   freezing_point,  "FrozenOcean"),
+        (freezing_point,  256, "Ocean")
     ])
 
     beachPallete = IntervalTree.from_tuples([
-        (0,   60,  "Cold Beach"),
-        (60,  100, "Stone Beach"),
+        (0,   freezing_point,  "Stone Beach"),
+        (freezing_point,  100, "Cold Beach"),
         (100, 256, "Beach")
     ])
 
     landPallete = IntervalTree.from_tuples([
-        (0,   60,  coldPallete),
-        (60,  80, coolPallete),
+        (0,   freezing_point,  coldPallete),
+        (freezing_point,  80, coolPallete),
         (80,  120, moderatePallete),
         (120,  180, warmPallete),
         (180, 256, hotPallete)
     ])
 
     mountainPallete = IntervalTree.from_tuples([
-        (0,  100, "Extreme Hills"),
-        (100, 256, "Ice Mountains")
+        (0,  freezing_point, "Ice Mountains"),
+        (freezing_point, 256, "Extreme Hills")
     ])
 
     # Elevation
