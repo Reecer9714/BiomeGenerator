@@ -29,13 +29,14 @@ class config:
     "Extreme Hills+ M": (70, 98, 70),
     "Extreme Hills+": (80, 112, 80),
     "Extreme Hills": (96, 96, 96),
+    "Snowy Mnts": (255, 255, 255),
     "Flower Forest": (45, 142, 73),
     "Forest": (5, 102, 33),
     "ForestHills": (34, 85, 28),
     "FrozenOcean": (144, 144, 160),
     "FrozenRiver": (160, 160, 255),
     "Hell": (255, 0, 0),
-    "Ice Mountains": (160, 160, 160),
+    "Ice Mountains": (160, 160, 170),
     "Ice Plains Spikes": (140, 180, 180),
     "Ice Plains": (255, 255, 255),
     "Jungle M": (76, 112, 9),
@@ -76,6 +77,8 @@ class config:
     }
 
     freezing_point = 30
+    sea_level = 100
+    tree_line = 150
 
     #Humidity
     coldPallete = IntervalTree.from_tuples([
@@ -110,8 +113,8 @@ class config:
 
     # Temperature
     oceanPallete = IntervalTree.from_tuples([
-        (0,   freezing_point,  "FrozenOcean"),
-        (freezing_point,  256, "Ocean")
+        (0,   freezing_point/2,  "FrozenOcean"),
+        (freezing_point/2,  256, "Ocean")
     ])
 
     beachPallete = IntervalTree.from_tuples([
@@ -130,15 +133,15 @@ class config:
 
     mountainPallete = IntervalTree.from_tuples([
         (0,  freezing_point, "Ice Mountains"),
-        (freezing_point, 256, "Extreme Hills")
+        (freezing_point, 256, "Snowy Mnts")
     ])
 
     # Elevation
     palleteLookup = IntervalTree.from_tuples([
         # (0,   50,  "Deep Ocean"), #Deep Ocean
-        (0,  100, oceanPallete),
-        (100, 105, beachPallete),
-        (105, 150, landPallete),
-        (150, 200, "Extreme Hills Edge"), #Mountain Edge
-        (200, 256, mountainPallete)
+        (0,  sea_level, oceanPallete),
+        (sea_level, 105, beachPallete),
+        (105, tree_line, landPallete),
+        (tree_line, tree_line+30, "Extreme Hills"), #Mountain Edge
+        (tree_line+30, 256, mountainPallete)
     ])

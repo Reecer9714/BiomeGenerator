@@ -21,7 +21,7 @@ def noise(nx, ny, seed, octives=config.octaves, pers=config.persistence, lac=con
         "octaves": octives,
         "persistence":pers,
         "lacunarity":lac,
-        # "base":seed
+        "base":seed
     }
     point_2d = (nx/config.scale_x,ny/config.scale_y)
     noise_value = snoise2(*point_2d, **noise_config)
@@ -66,15 +66,15 @@ def generateNoise(x: int, y: int, pixel: tuple, rng) -> tuple[float, float, floa
     elev_noise = noise(x, y, rng[Channel.ELEV])
     humid_noise = noise(x, y, rng[Channel.HUMID])
 
-    elev_noise = elev_noise ** 1.2
-
     distx = abs(x/config.image_width - 0.5)
     disty = abs(y/config.image_height - 0.5)
-    dist = distx*distx + disty*disty
+    nx = 2*x/config.image_width - 1
+    ny = 2*y/config.image_height - 1
+    dist = 1 - (1-nx**2) * (1-ny**2)
 
-    masked_temp = max(temp_noise - disty**0.95, 0)
-    masked_elev = max(elev_noise - dist**0.95, 0)
-    masked_humid = max(humid_noise - (0.05-dist**0.1)*0, 0)
+    masked_temp = clamp(temp_noise - disty, 0, 1)
+    masked_elev = clamp(((elev_noise + (1-dist)) / 2)**1.5, 0, 1)
+    masked_humid = clamp(humid_noise - (0.05-dist**0.1)*0, 0, 1)
 
     pixel[Channel.TEMP] = masked_temp * 255
     pixel[Channel.ELEV] = masked_elev * 255
@@ -89,13 +89,17 @@ def biome_task(image_row):
 def generateBiome(pixel: tuple) -> tuple[float, float, float]:
     # colorize
     elev_interval: Interval = config.palleteLookup.at( pixel[Channel.ELEV] ).pop()
-    color: Union[tuple , IntervalTree] = elev_interval.data
-    if isinstance(color, IntervalTree):
-        color = color.at( pixel[Channel.TEMP] ).pop().data
-        if isinstance(color, IntervalTree):
-            color = color.at( pixel[Channel.HUMID] ).pop().data
+    biome: Union[tuple , IntervalTree] = elev_interval.data
+    if isinstance(biome, IntervalTree):
+        biome = biome.at( pixel[Channel.TEMP] ).pop().data
+        if isinstance(biome, IntervalTree):
+            biome = biome.at( pixel[Channel.HUMID] ).pop().data
 
-    biome_color = config.biomeColorMap.get(color, (255, 0, 255))
+    biome_color = config.biomeColorMap.get(biome, (255, 0, 255))
+
+    if biome == "FrozenOcean" and pixel[Channel.ELEV] < config.sea_level:
+        pixel[Channel.ELEV] = config.sea_level
+
     # modify brightness slightly based on Channel.elevation
     brightness_mod = inv_lerp(elev_interval.begin, elev_interval.end, pixel[Channel.ELEV])
     interval_range = clamp((elev_interval.end - elev_interval.begin) / 50, 0, 0.5)
